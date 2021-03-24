@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 ALERT_THRESHOLD = timedelta(minutes=5)
 UPDATE_TIMEOUT = 3 * 60
 MINECRAFT_LOG_PATH = 'C:\\Users\\user\\AppData\\Roaming\\.vimeworld\\minigames\\logs\\latest.log'
+
 DISCORD_WEBHOOK_ALERT = os.getenv('DISCORD_WEBHOOK_ALERT')
 DISCORD_WEBHOOK_RESPAWN = os.getenv('DISCORD_WEBHOOK_RESPAWN')
 
@@ -30,7 +31,7 @@ basedir = Path(__file__).parent
 db_file = basedir / 'db.pkl'
 data_file = Path(MINECRAFT_LOG_PATH)
 
-events = re.compile('\[(\d{2}:\d{2}:\d{2})\].+\] ((?:' + '|'.join(BOSS_COOLDOWN) + '))')
+events = re.compile('\[(\d{2}:\d{2}:\d{2})\].+ \[CHAT\] ((?:' + '|'.join(BOSS_COOLDOWN) + '))')
 parts_of_time = re.compile('(\d{2}):(\d{2}):(\d{2})')
 
 while True:
@@ -56,14 +57,17 @@ while True:
         hour, minute, second = [int(i) for i in parts_of_time.findall(kill_time)[0]]
         kill_datetime = today_midnight + timedelta(hours=hour, minutes=minute,
                                                    seconds=second)
-        if kill_datetime + BOSS_COOLDOWN[boss_name] > respawn[boss_name]:
+        next_respawn = kill_datetime + BOSS_COOLDOWN[boss_name]
+        if next_respawn > respawn[boss_name]:
             is_updated = True
-            respawn[boss_name] = kill_datetime + BOSS_COOLDOWN[boss_name]
+            respawn[boss_name] = next_respawn
 
     if is_updated:
-        respawn_list = [f'[{respawn_time.strftime("%T")}] {boss}'
-                        for boss, respawn_time in sorted(respawn.items(), key=operator.itemgetter(1))]
-        requests.patch(DISCORD_WEBHOOK_RESPAWN, json={'content': '\n'.join(respawn_list)})
+        respawn_list = []
+        for boss, respawn_time in sorted(respawn.items(), key=operator.itemgetter(1)):
+            respawn_list.append(f'[{respawn_time.strftime("%T")}] {boss}')
+        message = '\n'.join(respawn_list)
+        requests.patch(DISCORD_WEBHOOK_RESPAWN, json={'content': message})
 
     db_file.write_bytes(pickle.dumps(respawn))
 
@@ -74,6 +78,7 @@ while True:
             if current_time > respawn_datetime:
                 print(f'boss: {boss}, current: {current_time}, respawn: {respawn_datetime}')
                 continue
+
             time_left = respawn_datetime - current_time
             minutes_left = (time_left.seconds // 60) % 60
             seconds_left = time_left.seconds - (minutes_left * 60)
