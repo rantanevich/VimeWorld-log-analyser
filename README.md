@@ -1,4 +1,4 @@
-# Minecraft (VimeWorld) log analyzer
+# Minecraft (VimeWorld) log analyser
 
 It looks at Minecraft (VimeWorld) log file, retrieves bosses and time when they was killed. And it sends a notification into Discord channel if there are updates.
 
