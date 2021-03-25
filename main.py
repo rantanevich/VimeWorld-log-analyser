@@ -8,10 +8,10 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 
+UPDATE_TIMEOUT = 3 * 60    # 3 minutes
 ALERT_THRESHOLD = timedelta(minutes=5)
-UPDATE_TIMEOUT = 3 * 60
-MINECRAFT_LOG_PATH = 'C:\\Users\\user\\AppData\\Roaming\\.vimeworld\\minigames\\logs\\latest.log'
 
+MINECRAFT_LOG_PATH = os.getenv('MINECRAFT_LOG_FILE')
 DISCORD_WEBHOOK_ALERT = os.getenv('DISCORD_WEBHOOK_ALERT')
 DISCORD_WEBHOOK_RESPAWN = os.getenv('DISCORD_WEBHOOK_RESPAWN')
 
